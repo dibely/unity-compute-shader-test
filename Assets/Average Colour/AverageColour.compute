@@ -1,0 +1,96 @@
+﻿// Each #kernel tells which function to compile; you can have many kernels
+#pragma kernel CSMain
+
+int TextureSize;
+Texture2D SourceTexture;
+/*
+SamplerState samplerSourceTexture {
+    Filter = MIN_MAG_MIP_LINEAR;
+    AddressU = Clamp;
+    AddressV = Clamp;
+};
+*/
+SamplerState PointClampSampler;
+//SamplerState LinearClampSampler;
+
+RWStructuredBuffer<float3> FloatBuffer;
+RWTexture2D<float4> RenderTexture;
+
+#define DISPATCHX 4	// Must match the parameters to the dispatch call
+#define DISPATCHY 4 // Must match the parameters to the dispatch call
+#define NUMTHREADSX 4
+#define NUMTHREADSY 4
+
+[numthreads(NUMTHREADSX, NUMTHREADSY, 1)]
+void CSMain(uint test : SV_DispatchThreadID, uint3 id : SV_DispatchThreadID, uint gindex : SV_GroupIndex, uint3 gid : SV_GroupThreadID, uint3 groupId : SV_GroupID) {
+	// TODO: Might be better to have the texture size passed in as a float if it's never used as an int?
+    float TextureSizeAsFloat = (float) TextureSize;
+    //float texelX = 1.0f / TextureSize;
+    //float texelY = 1.0f / TextureSize;
+    //float2 texCoord = float2(id.x * texelX, id.y * texelY);
+    //float2 texCoord = float2(id.x, id.y);
+	// The texcoord comes from the 
+
+    //float texelWidth = (DISPATCHX * NUMTHREADSX) / TextureSizeAsFloat;
+    //float texelHeight = (DISPATCHY * NUMTHREADSY) / TextureSizeAsFloat;
+    //float texelWidth = 2.0f / TextureSizeAsFloat;
+    //float texelHeight = 2.0f / TextureSizeAsFloat;
+    float texelWidth = 1.0f / (DISPATCHX * NUMTHREADSX);
+    float texelHeight = 1.0f / (DISPATCHY * NUMTHREADSY);
+
+
+    float texelOffsetX = id.x * texelWidth;
+    float texelOffsetY = id.y * texelHeight;
+    float2 initialTexCoord = float2(texelOffsetX, texelOffsetY);
+
+    //float2 texCoord = float2((id.x * 16) / (float) TextureSize, (id.y * 16) / (float)TextureSize);
+
+    //int floatBufferIndex = gindex;
+	// The index is calculated based on the current x offset plus the numthreads in y * dispatch paramter in y * offset in y
+    int floatBufferIndex = id.x + ((DISPATCHY * NUMTHREADSY) * id.y);
+
+	// Sample the texture multiple times and obtain an average value for the block
+    float4 res;
+    float2 texCoord;
+	
+    for (int x = 0; x < NUMTHREADSX; x++) {
+        for (int y = 0; y < NUMTHREADSY; y++) {
+            texCoord = initialTexCoord + float2(x * (texelWidth / NUMTHREADSX), y * (texelHeight / NUMTHREADSY));
+            res += SourceTexture.SampleLevel(PointClampSampler, texCoord, 0);
+
+			// Fill the pixel with what we read from the source texture for testing
+            RenderTexture[texCoord * TextureSizeAsFloat] = res;
+        }
+    }
+    //FloatBuffer[floatBufferIndex] = float3(gindex, id.x, id.y);
+    //FloatBuffer[floatBufferIndex] = float3(gindex, (id.x * 16), (id.y * 16));
+    //FloatBuffer[floatBufferIndex] = float3(gindex, (id.x * 16) / (float)TextureSize, (id.y * 16) / (float)TextureSize);
+    //FloatBuffer[floatBufferIndex] = float3(gindex, gid.x, groupId.x);
+    //FloatBuffer[floatBufferIndex] = float3(gindex, gid.x, groupId.x);
+    //FloatBuffer[floatBufferIndex] = float3(gindex, gid.x, gid.y);
+    //FloatBuffer[floatBufferIndex] = float3(floatBufferIndex, id.x, id.y);
+    FloatBuffer[floatBufferIndex] = res.xyz / (NUMTHREADSX * NUMTHREADSY);
+    //FloatBuffer[floatBufferIndex] = float3(gindex, groupId.x, groupId.y);
+    //FloatBuffer[floatBufferIndex] = float3(gindex, TextureSize, 0.0f);
+    //FloatBuffer[floatBufferIndex] = float3(res.rgb);
+
+	// Fill the pixel with what we read from the source texture for testing
+    //RenderTexture[texCoord * TextureSizeAsFloat] = res;
+    //RenderTexture[id.xy] = res;
+
+/*
+	texCoord = float2(id.x+1 * texelX, id.y * texelY);	
+    res = SourceTexture.SampleLevel(samplerSourceTexture, texCoord, 0);
+    FloatBuffer[floatBufferIndex] += float3(res.rgb);
+
+    texCoord = float2(id.x * texelX, id.y + 1 * texelY);
+    res = SourceTexture.SampleLevel(samplerSourceTexture, texCoord, 0);
+    FloatBuffer[floatBufferIndex] += float3(res.rgb);
+
+    texCoord = float2(id.x + 1 * texelX, id.y + 1 * texelY);
+    res = SourceTexture.SampleLevel(samplerSourceTexture, texCoord, 0);
+    FloatBuffer[floatBufferIndex] += float3(res.rgb);
+*/
+
+    //FloatBuffer[floatBufferIndex] /= 4;
+}
