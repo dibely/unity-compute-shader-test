@@ -9,8 +9,13 @@ SamplerState PointClampSampler;
 RWStructuredBuffer<float3> FloatBuffer;
 RWTexture2D<float4> RenderTexture;
 
-#define DISPATCH_SIZE_X 4 // Must match the parameters to the dispatch call
-#define DISPATCH_SIZE_Y 4 // Must match the parameters to the dispatch call
+int DispatchSizeX;
+int DispatchSizeY;
+int NumThreadsX;
+int NumThreadsY;
+
+#define DISPATCH_SIZE_X (DispatchSizeX) // Must match the parameters to the dispatch call
+#define DISPATCH_SIZE_Y (DispatchSizeY) // Must match the parameters to the dispatch call
 #define NUM_THREADS_X 4
 #define NUM_THREADS_Y 4
 #define GROUP_SIZE_X (DISPATCH_SIZE_X * NUM_THREADS_X)

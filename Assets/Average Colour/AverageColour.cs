@@ -4,8 +4,8 @@ public class AverageColour : MonoBehaviour {
     private const int TEXTURE_SIZE = 32;
     private const int THREAD_GROUP_X = TEXTURE_SIZE / 8;
     private const int THREAD_GROUP_Y = TEXTURE_SIZE / 8;
-    private const int THREAD_COUNT_X = 4;
-    private const int THREAD_COUNT_Y = 4;
+    private const int THREAD_COUNT_X = 4; // Must match numthreads parameter in the compute shader
+    private const int THREAD_COUNT_Y = 4; // Must match numthreads parameter in the compute shader
 
     public ComputeShader computeShader;
     public Texture2D sourceTexture;
@@ -42,6 +42,9 @@ public class AverageColour : MonoBehaviour {
         floatBuffer = new ComputeBuffer(arraySize, sizeof(float)*3, ComputeBufferType.Default);
 
         int kernelHandle = computeShader.FindKernel("CSMain");
+        computeShader.SetInt("DispatchSizeX", THREAD_GROUP_X);
+        computeShader.SetInt("DispatchSizeY", THREAD_GROUP_Y);
+
         computeShader.SetTexture(kernelHandle, "RenderTexture", renderTexture);
         computeShader.SetTexture(kernelHandle, "SourceTexture", sourceTexture);
         computeShader.SetBuffer(kernelHandle, "FloatBuffer", floatBuffer);
