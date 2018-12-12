@@ -18,9 +18,13 @@ public class SimplePolygon : MonoBehaviour {
     public ComputeShader computeShader;
 
     private ComputeBuffer vertexBuffer;
+    public Material material;
 
     private void Awake() {
         BuildVertexData();
+
+        // Setup the material
+        material.SetBuffer("vertexBuffer", vertexBuffer);
     }
 
     private void BuildVertexData() {
@@ -39,14 +43,37 @@ public class SimplePolygon : MonoBehaviour {
         computeShader.SetBuffer(kernelHandle, "VertexBuffer", vertexBuffer);
         computeShader.Dispatch(kernelHandle, THREAD_GROUP_X, THREAD_GROUP_Y, 1);
 
+        // DEBUG
         vertexBuffer.GetData(vertexArray);
-        vertexBuffer.Dispose();
-
         foreach (Vertex data in vertexArray) {
             Debug.Log("Vertex data:");
             Debug.Log(data.position);
             Debug.Log(data.normal);
             Debug.Log(data.uv);
         }
+    }
+
+    private void OnRenderObject() {
+        if(material == null) {
+            Debug.LogError("Material is invalid");
+            return;
+        }
+
+        if(vertexBuffer == null) {
+            return;
+        }
+
+        if(vertexBuffer.count == 0) {
+            Debug.LogWarning("No verteices in buffer");
+            return;
+        }
+        //Debug.Log("vertexBuffer count: " + vertexBuffer.count);
+        material.SetPass(0);
+        material.SetBuffer("vertexBuffer", vertexBuffer);
+        Graphics.DrawProcedural(MeshTopology.Points, vertexBuffer.count);
+    }
+
+    private void OnDestroy() {
+        vertexBuffer.Release();
     }
 }
