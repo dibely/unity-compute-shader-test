@@ -80,12 +80,15 @@ public class SimpleMesh : MonoBehaviour {
         List<int> indices = new List<int>(numberOfTriangles* INDICES_PER_TRIANGLE);
         int vertexIndex = 0;
 
+        bool inverted = false;
         for (int triangleCount = 0; triangleCount < numberOfTriangles; triangleCount++) {
             for(int x = 0; x < INDICES_PER_TRIANGLE; x++) {
-                vertexIndex = x + triangleCount;
+                vertexIndex = (inverted ? 2 - x : x) + triangleCount;
+
                 Debug.Log("Adding vertex index: " + vertexIndex);
                 indices.Add(vertexIndex);
             }
+            inverted = !inverted;
         }
 
         mesh.vertices = vertices;
