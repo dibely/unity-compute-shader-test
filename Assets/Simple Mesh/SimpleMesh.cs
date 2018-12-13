@@ -1,4 +1,5 @@
 ﻿using UnityEngine;
+using System.Collections.Generic;
 
 public class SimpleMesh : MonoBehaviour {
 
@@ -9,6 +10,7 @@ public class SimpleMesh : MonoBehaviour {
         public Vector2 uv;
     }
 
+    private const int INDICES_PER_TRIANGLE = 3;
     private const int VERTEX_COUNT = 4;
     private const int THREAD_COUNT_X = 2; // Must match numthreads parameter in the compute shader
     private const int THREAD_COUNT_Y = 2; // Must match numthreads parameter in the compute shader
@@ -59,25 +61,37 @@ public class SimpleMesh : MonoBehaviour {
 
     private void BuildMesh(Vertex[] vertexData) {
         Mesh mesh = new Mesh();
+        mesh.name = "SimpleMesh";
         Vector3[] vertices = new Vector3[vertexData.Length];
-        int[] indices = new int[vertexData.Length];
         Vector3[] normals = new Vector3[vertexData.Length];
         Vector2[] uvs = new Vector2[vertexData.Length];
+
 
         int index = 0;
         foreach(Vertex vertex in vertexData) {
             vertices[index] = vertex.position;
             normals[index] = vertex.normal;
             uvs[index] = vertex.uv;
-            indices[index] = index;
-
             ++index;
+        }
+
+        // When building a triangle strip of the vertices the number of triangles is the number fo vertices minus two
+        int numberOfTriangles = vertexData.Length - 2;
+        List<int> indices = new List<int>(numberOfTriangles* INDICES_PER_TRIANGLE);
+        int vertexIndex = 0;
+
+        for (int triangleCount = 0; triangleCount < numberOfTriangles; triangleCount++) {
+            for(int x = 0; x < INDICES_PER_TRIANGLE; x++) {
+                vertexIndex = x + triangleCount;
+                Debug.Log("Adding vertex index: " + vertexIndex);
+                indices.Add(vertexIndex);
+            }
         }
 
         mesh.vertices = vertices;
         mesh.normals = normals;
         mesh.uv = uvs;
-        mesh.SetIndices(indices, MeshTopology.Points, 0);
+        mesh.SetIndices(indices.ToArray(), MeshTopology.Triangles, 0);
 
         mesh.RecalculateBounds();
         meshFilter.mesh = mesh;
